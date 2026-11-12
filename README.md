@@ -39,10 +39,6 @@ Each change is logged in the "Belief revision log" and used from the next tick.
   "buy dips, take profits, cut losses" heuristic, not financial advice.
 - Port already in use? Close the other program, or stop an earlier run.
 
-## 6. Verify everything yourself
+
 ```
-python security_test.py        # while start_all.py is running: bad/forged requests get rejected
-python bdi_demo.py             # belief change -> intention change, standalone
-python market_api.py           # live feed check
-```
-Tuning for demos: `FEED_INTERVAL=5 AGENT_INTERVAL=2 python agent_server.py` (faster ticks).
+
