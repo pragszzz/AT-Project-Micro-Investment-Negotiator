@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Micro-Investment Negotiator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#F2EFE6; --surface:#FBF9F3; --ink:#23241F; --soft:#6E6E62; --line:rgba(35,36,31,.10);
+    --forest:#3B4A38; --forest-s:rgba(59,74,56,.10); --blush:#C98F92; --blush-s:rgba(201,143,146,.16);
+    --gold:#B0894C; --gold-s:rgba(176,137,76,.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16180F; --surface:#1E2117; --ink:#ECE9DD; --soft:#9A9A8B; --line:rgba(236,233,221,.12);
+      --forest:#8FB08A; --forest-s:rgba(143,176,138,.14); --blush:#E3A5A8; --blush-s:rgba(227,165,168,.14);
+      --gold:#D2AC6C; --gold-s:rgba(210,172,108,.14); }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 Inter, system-ui, sans-serif; }
+  .serif { font-family:Fraunces, Georgia, serif; font-weight:600; }
+  header { display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; justify-content:space-between; padding:28px 32px 18px; }
+  h1 { margin:0; font-size:24px; }
+  .sub { color:var(--soft); font-size:12px; display:flex; gap:14px; flex-wrap:wrap; margin-top:6px; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; background:var(--soft); }
+  .dot.ok { background:var(--forest); } .dot.bad { background:var(--blush); }
+  .seg { display:flex; border:1px solid var(--line); border-radius:999px; padding:3px; }
+  .seg button { border:0; background:transparent; color:var(--soft); padding:8px 16px; border-radius:999px; font:600 11px Inter; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
+  .seg button.on { background:var(--forest); color:var(--surface); }
+  main { display:grid; grid-template-columns:repeat(12,1fr); gap:18px; padding:0 32px 40px; }
+  .tile { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:22px; min-width:0; }
+  .label { font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:var(--soft); margin-bottom:10px; }
+  .big { font-size:40px; line-height:1.1; }
+  .c12{grid-column:span 12} .c7{grid-column:span 7} .c5{grid-column:span 5} .c4{grid-column:span 4} .c6{grid-column:span 6} .c3{grid-column:span 3}
+  @media (max-width:980px){ .c7,.c5,.c4,.c6,.c3{grid-column:span 12} header,main{padding-left:16px;padding-right:16px} }
+  .pos{color:var(--forest)} .neg{color:var(--blush)}
+  .pill { display:inline-block; padding:2px 9px; border-radius:999px; font-size:11px; font-weight:600; }
+  .pill.live { background:var(--forest-s); color:var(--forest); } .pill.sim { background:var(--gold-s); color:var(--gold); }
+  .row { display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); align-items:center; }
+  .row:last-child { border-bottom:0; }
+  table { width:100%; border-collapse:collapse; font-size:13px; } td,th { padding:8px 4px; border-bottom:1px solid var(--line); text-align:right; }
+  th { color:var(--soft); font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:.1em; } td:first-child,th:first-child { text-align:left; }
+  .scroll { max-height:300px; overflow:auto; }
+  svg.chart { width:100%; height:150px; display:block; }
+  .mkt { display:grid; grid-template-columns:repeat(5,1fr); gap:18px; grid-column:span 12; }
+  @media (max-width:980px){ .mkt{ grid-template-columns:repeat(2,1fr);} }
+  .asset .price { font-size:22px; margin:2px 0 6px; }
+  .field { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--line); }
+  .field input { width:76px; text-align:right; background:transparent; color:var(--ink); border:0; border-bottom:1px solid var(--line); font:inherit; padding:2px; }
+  .btn { border:0; border-radius:10px; padding:10px 18px; font:600 12px Inter; cursor:pointer; }
+  .btn.go { background:var(--forest); color:var(--surface); } .btn.no { background:transparent; border:1.5px solid var(--blush); color:var(--blush); }
+  .btn.ghost { background:transparent; border:1px solid var(--line); color:var(--soft); }
+  .pending { background:var(--blush-s); border-color:var(--blush); }
+  .mono { font-variant-numeric:tabular-nums; } .muted { color:var(--soft); } .small { font-size:12px; }
+  .note { padding:6px 0; border-bottom:1px solid var(--line); font-size:12.5px; } .note:last-child{border:0}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1 class="serif">Micro-Investment Negotiator</h1>
+    <div class="sub" id="status"></div>
+  </div>
+  <div class="seg" id="modeSeg">
+    <button data-m="auto">Let it run</button><button data-m="ask">Ask me first</button>
+  </div>
+</header>
+
+<main>
+  <section class="tile c7">
+    <div class="label">Portfolio value (paper account)</div>
+    <div class="big serif mono" id="pv">-</div>
+    <div id="pnl" class="mono" style="margin:4px 0 12px"></div>
+    <svg class="chart" id="chart" viewBox="0 0 600 150" preserveAspectRatio="none"></svg>
+  </section>
+
+  <section class="tile c5">
+    <div class="label">Account &amp; agent settings</div>
+    <div class="row"><span class="muted">Cash</span><b class="mono" id="cash"></b></div>
+    <div class="row"><span class="muted">Invested</span><b class="mono" id="invested"></b></div>
+    <div class="row"><span class="muted">Realized P&amp;L</span><b class="mono" id="realized"></b></div>
+    <div id="settings"></div>
+    <div style="margin-top:12px"><button class="btn ghost" id="resetBtn">Reset paper account</button></div>
+  </section>
+
+  <div class="mkt" id="market"></div>
+
+  <section class="tile c6" id="mind">
+    <div class="label">Agent mind &middot; belief, desire, intention</div>
+    <div id="mindBody"></div>
+  </section>
+
+  <section class="tile c6" id="pendingTile"></section>
+
+  <section class="tile c6">
+    <div class="label">Holdings</div>
+    <div id="holdings"></div>
+  </section>
+
+  <section class="tile c6">
+    <div class="label">Activity</div>
+    <div class="scroll" id="ledger"></div>
+  </section>
+
+  <section class="tile c12">
+    <div class="label">Belief revision log (why the agent changed its mind)</div>
+    <div class="scroll" id="beliefs" style="max-height:200px"></div>
+  </section>
+</main>
+
+<script>
+const KEY = "demo-dashboard-key-2026";
+let S = null;
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = n => (n < 0 ? "-" : "") + "$" + Math.abs(n).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+const price = n => n == null ? "-" : "$" + n.toLocaleString(undefined, {minimumFractionDigits: n < 1 ? 4 : 2, maximumFractionDigits: n < 1 ? 6 : 2});
+const sgn = n => (n >= 0 ? "+" : "") + n.toFixed(2);
+const cls = n => n >= 0 ? "pos" : "neg";
+
+async function post(path, body) {
+  try {
+    await fetch(path, {method:"POST", headers:{"Content-Type":"application/json","X-Api-Key":KEY}, body: body ? JSON.stringify(body) : undefined});
+  } catch (e) {}
+  poll();
+}
+
+async function poll() {
+  try {
+    const r = await fetch("/state");
+    S = await r.json();
+    render(true);
+  } catch (e) { render(false); }
+}
+
+function render(connected) {
+  if (!S) return;
+  const feed = S.feed, live = Object.values(S.prices).filter(p => p.source === "live").length;
+  document.getElementById("status").innerHTML =
+    `<span><span class="dot ${connected ? "ok" : "bad"}"></span>${connected ? "agent online" : "agent unreachable"}</span>` +
+    `<span><span class="dot ${S.broker_online ? "ok" : (S.broker_online === false ? "bad" : "")}"></span>broker ${S.broker_online ? "online" : (S.broker_online === false ? "OFFLINE" : "unknown")}</span>` +
+    `<span>${live}/${Object.keys(S.prices).length} prices live</span>` +
+    `<span>uptime ${Math.floor(S.uptime/60)}m ${Math.floor(S.uptime%60)}s</span>`;
+
+  document.querySelectorAll("#modeSeg button").forEach(b => b.classList.toggle("on", b.dataset.m === S.mode));
+
+  document.getElementById("pv").textContent = money(S.portfolio);
+  document.getElementById("pnl").innerHTML = `<span class="${cls(S.pnl)}">${S.pnl >= 0 ? "+" : "-"}${money(Math.abs(S.pnl))} (${sgn(S.pnl_pct)}%)</span> <span class="muted small">since start (${money(S.starting_value)})</span>`;
+  document.getElementById("cash").textContent = money(S.cash);
+  document.getElementById("invested").textContent = money(S.invested);
+  document.getElementById("realized").innerHTML = `<span class="${cls(S.realized_pnl)}">${money(S.realized_pnl)}</span>`;
+  drawChart(S.history);
+
+  // settings (skip rebuilding while the user is typing in one)
+  const sEl = document.getElementById("settings");
+  if (!sEl.contains(document.activeElement)) {
+    const f = (k, label, step) => `<div class="field"><span class="muted">${label}</span><input type="number" step="${step}" value="${S[k]}" data-k="${k}"></div>`;
+    sEl.innerHTML = f("risk_tolerance","Risk tolerance %",0.5) + f("min_trade","Minimum trade $",5) + f("take_profit_pct","Take-profit %",0.5) + f("stop_loss_pct","Stop-loss %",0.5);
+    sEl.querySelectorAll("input").forEach(i => i.onchange = () => post("/settings", {[i.dataset.k]: parseFloat(i.value)}));
+  }
+
+  // market tiles
+  document.getElementById("market").innerHTML = Object.entries(S.prices).map(([a, p]) => {
+    const held = S.positions[a];
+    return `<div class="tile asset"><div class="label">${esc(a)} <span class="pill ${p.source === "live" ? "live" : "sim"}">${p.source === "live" ? "LIVE" : esc(p.source).toUpperCase()}</span></div>
+      <div class="price serif mono">${price(p.price)}</div>
+      <div class="mono ${cls(p.change_pct)}">${sgn(p.change_pct)}% <span class="muted small">24h</span></div>
+      ${held ? `<div class="small muted" style="margin-top:6px">holding ${held.qty.toPrecision(4)}</div>` : ""}</div>`;
+  }).join("");
+
+  // mind
+  const feedMsgs = Object.entries(feed).filter(([,v]) => v.ok === false).map(([k,v]) => `<div class="note neg">${esc(k)} feed down: using simulated prices. ${esc(v.error || "")}</div>`).join("");
+  document.getElementById("mindBody").innerHTML =
+    `<div class="small muted">INTENTION (${esc(S.intention_kind)})</div><div class="serif" style="margin:4px 0 12px">${esc(S.intention)}</div>
+     <div class="small muted">DESIRES</div>${S.desires.map(d => `<div class="note">${esc(d)}</div>`).join("")}
+     <div class="small muted" style="margin-top:10px">Options evaluated last tick: <b>${S.options_evaluated}</b></div>${feedMsgs}`;
+
+  // pending
+  const pt = document.getElementById("pendingTile");
+  const p = S.pending;
+  pt.className = "tile c6" + (p ? " pending" : "");
+  if (p) {
+    pt.innerHTML = `<div class="label" style="color:var(--blush)">Needs your approval &middot; ${Math.ceil(p.expires_in)}s left</div>
+      <div class="serif" style="font-size:18px;margin-bottom:8px">${esc(p.action)} ${esc(p.asset)} at ${price(p.price)}</div>
+      <div class="small muted" style="margin-bottom:8px">${esc(p.reason)}</div>
+      <div class="note">Amount <b>${money(p.alloc)}</b> &middot; negotiated fee <b>${p.fee_pct}%</b>${p.utility != null ? ` &middot; utility ${p.utility}` : ""} ${p.options_evaluated ? `&middot; best of ${p.options_evaluated} options` : ""}</div>
+      ${(p.rounds || []).map(r => `<div class="note small">round ${r.round}: you offered ${r.buyer_offer_pct}% &rarr; broker ${esc(r.broker_response)} @ ${r.broker_fee_pct}%</div>`).join("")}
+      <div style="display:flex;gap:8px;margin-top:14px"><button class="btn go" onclick="post('/approve')">Approve</button><button class="btn no" onclick="post('/decline')">Decline</button></div>`;
+  } else {
+    pt.innerHTML = `<div class="label">Approvals</div><div class="muted">${S.mode === "ask" ? "Nothing waiting. In ask mode the agent will show each negotiated deal here for your decision." : "Auto mode: the agent executes negotiated trades on its own and logs them."}</div>`;
+  }
+
+  // holdings
+  const pos = Object.entries(S.positions);
+  document.getElementById("holdings").innerHTML = pos.length ?
+    `<table><tr><th>Asset</th><th>Qty</th><th>Avg cost</th><th>Value</th><th>P&amp;L</th></tr>${pos.map(([a, h]) =>
+      `<tr><td>${esc(a)}</td><td class="mono">${h.qty.toPrecision(4)}</td><td class="mono">${price(h.avg_cost)}</td><td class="mono">${money(h.value)}</td><td class="mono ${cls(h.unrealized)}">${money(h.unrealized)} (${sgn(h.unrealized_pct)}%)</td></tr>`).join("")}</table>`
+    : `<div class="muted">No open positions yet. The agent buys when an asset dips and scores well on utility.</div>`;
+
+  document.getElementById("ledger").innerHTML = S.ledger.map(l =>
+    `<div class="row"><span class="muted mono small">${esc(l.t)}</span><span style="flex:1;padding:0 10px">${esc(l.text)}</span><span class="mono">${l.amount != null ? money(l.amount) : ""}</span></div>`).join("");
+  document.getElementById("beliefs").innerHTML = S.belief_log.map(b =>
+    `<div class="note"><span class="muted mono small">${esc(b.t)}</span> &nbsp; ${esc(b.note)}</div>`).join("");
+}
+
+function drawChart(h) {
+  const el = document.getElementById("chart");
+  if (!h || h.length < 2) { el.innerHTML = `<text x="300" y="80" text-anchor="middle" fill="currentColor" opacity=".4" font-size="13">collecting data...</text>`; return; }
+  const vs = h.map(p => p.v), lo = Math.min(...vs), hi = Math.max(...vs), span = (hi - lo) || 1;
+  const pts = vs.map((v, i) => `${(i / (vs.length - 1)) * 600},${135 - ((v - lo) / span) * 120}`).join(" ");
+  const up = vs[vs.length - 1] >= vs[0];
+  const col = up ? "var(--forest)" : "var(--blush)";
+  el.innerHTML = `<polygon points="0,150 ${pts} 600,150" fill="${col}" opacity=".12"/><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;
+}
+
+document.querySelectorAll("#modeSeg button").forEach(b => b.onclick = () => post("/settings", {mode: b.dataset.m}));
+document.getElementById("resetBtn").onclick = () => { if (confirm("Reset the paper account to its starting cash?")) post("/reset"); };
+
+poll();
+setInterval(poll, 1500);
+</script>
+</body>
+</html>

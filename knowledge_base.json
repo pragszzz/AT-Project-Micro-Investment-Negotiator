@@ -1,0 +1,29 @@
+{
+  "assets": {
+    "BTC": {
+      "provider": "coingecko", "api_id": "bitcoin", "category": "crypto",
+      "description": "Bitcoin. Live price and 24h change from CoinGecko.",
+      "volatility_multiplier": 1.35, "sim_start_price": 65000.0, "sim_vol": 0.004
+    },
+    "ETH": {
+      "provider": "coingecko", "api_id": "ethereum", "category": "crypto",
+      "description": "Ethereum. Live price and 24h change from CoinGecko.",
+      "volatility_multiplier": 1.45, "sim_start_price": 2600.0, "sim_vol": 0.005
+    },
+    "SOL": {
+      "provider": "coingecko", "api_id": "solana", "category": "crypto",
+      "description": "Solana. Live price and 24h change from CoinGecko.",
+      "volatility_multiplier": 1.6, "sim_start_price": 150.0, "sim_vol": 0.006
+    },
+    "AAPL": {
+      "provider": "yahoo", "api_id": "AAPL", "category": "equity",
+      "description": "Apple Inc. Live quote from Yahoo Finance (moves only during US market hours).",
+      "volatility_multiplier": 0.75, "sim_start_price": 230.0, "sim_vol": 0.002
+    },
+    "SPY": {
+      "provider": "yahoo", "api_id": "SPY", "category": "etf",
+      "description": "S&P 500 ETF. Live quote from Yahoo Finance (moves only during US market hours).",
+      "volatility_multiplier": 0.65, "sim_start_price": 580.0, "sim_vol": 0.0015
+    }
+  }
+}
